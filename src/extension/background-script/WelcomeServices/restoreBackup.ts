@@ -16,6 +16,7 @@ import { GroupRecordFromJSONFormat } from '../../../utils/type-transform/BackupF
 import { createOrUpdateUserGroupDatabase } from '../../../database/group'
 import { i18n } from '../../../utils/i18n-next'
 import { MessageCenter } from '../../../utils/messages'
+import type { AESJsonWebKey } from '../../../modules/CryptoAlgorithm/interfaces/utils'
 
 /**
  * Restore the backup
@@ -24,29 +25,20 @@ export async function restoreBackup(json: object, whoAmI?: ProfileIdentifier): P
     const data = UpgradeBackupJSONFile(json, whoAmI)
     if (!data) throw new TypeError(i18n.t('service_invalid_backup_file'))
 
-    const keyCache = new Map<JsonWebKey, CryptoKey>()
-    const aes = getKeyParameter('aes')
-
-    MessageCenter.startBatch()
     try {
-        // Transform all JsonWebKey to CryptoKey
-        await Promise.all([
-            ...[...data.personas, ...data.profiles]
-                .filter((x) => x.localKey)
-                .map((x) => JsonWebKeyToCryptoKey(x.localKey!, ...aes).then((k) => keyCache.set(x.localKey!, k))),
-        ])
+        MessageCenter.startBatch()
         {
             await consistentPersonaDBWriteAccess(async (t) => {
                 for (const x of data.personas) {
                     await createOrUpdatePersonaDB(
-                        PersonaRecordFromJSONFormat(x, keyCache),
+                        PersonaRecordFromJSONFormat(x),
                         { explicitUndefinedField: 'ignore', linkedProfiles: 'merge' },
                         t,
                     )
                 }
 
                 for (const x of data.profiles) {
-                    const { linkedPersona, ...record } = ProfileRecordFromJSONFormat(x, keyCache)
+                    const { linkedPersona, ...record } = ProfileRecordFromJSONFormat(x)
                     await createOrUpdateProfileDB(record, t)
                     if (linkedPersona) {
                         await attachProfileDB(
@@ -61,11 +53,7 @@ export async function restoreBackup(json: object, whoAmI?: ProfileIdentifier): P
         }
 
         for (const x of data.posts) {
-            if (x.postCryptoKey) {
-                const c = await JsonWebKeyToCryptoKey(x.postCryptoKey, ...aes)
-                keyCache.set(x.postCryptoKey, c)
-            }
-            await createOrUpdatePostDB(PostRecordFromJSONFormat(x, keyCache), 'append')
+            await createOrUpdatePostDB(PostRecordFromJSONFormat(x), 'append')
         }
 
         for (const x of data.userGroups) {

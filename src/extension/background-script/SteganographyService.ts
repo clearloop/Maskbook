@@ -10,7 +10,7 @@ import { decodeArrayBuffer, encodeArrayBuffer } from '../../utils/type-transform
 
 OnlyRunInContext('background', 'SteganographyService')
 
-type Template = 'default' | 'eth' | 'dai'
+type Template = 'default' | 'eth' | 'dai' | 'okb'
 
 type Dimension = {
     width: number

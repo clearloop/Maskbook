@@ -36,7 +36,7 @@ import {
 } from '../../extension/background-script/CryptoServices/utils'
 import { formatBalance } from '../../plugins/Wallet/formatter'
 import { RedPacketTokenType } from '../../plugins/Wallet/database/types'
-import { isDAI } from '../../plugins/Wallet/erc20'
+import { DAI_ADDRESS, OKB_ADDRESS } from '../../plugins/Wallet/erc20'
 import { PluginRedPacketTheme } from '../../plugins/Wallet/theme'
 import { sleep } from '../../utils/utils'
 import { useI18N } from '../../utils/i18n-next-ui'
@@ -296,12 +296,14 @@ export function PostDialog(props: PostDialogProps) {
                 const metadata = readTypedMessageMetadata(typedMessageMetadata, 'com.maskbook.red_packet:1')
                 if (isSteganography) {
                     const isEth = metadata.ok && metadata.val.token_type === RedPacketTokenType.eth
-                    const isDai =
+                    const isErc20 =
                         metadata.ok &&
-                        metadata.val.token_type === RedPacketTokenType.erc20 &&
-                        metadata.val.token_type &&
+                        metadata.val &&
                         metadata.val.token &&
-                        isDAI(metadata.val.token)
+                        metadata.val.token_type === RedPacketTokenType.erc20
+                    const isDai = isErc20 && metadata.ok && metadata.val.token?.address === DAI_ADDRESS
+                    const isOkb = isErc20 && metadata.ok && metadata.val.token?.address === OKB_ADDRESS
+
                     activeUI.taskPasteIntoPostBox(
                         t('additional_post_box__steganography_post_pre', { random: String(Date.now()) }),
                         {
@@ -310,7 +312,7 @@ export function PostDialog(props: PostDialogProps) {
                         },
                     )
                     activeUI.taskUploadToPostBox(encrypted, {
-                        template: isEth ? 'eth' : isDai ? 'dai' : 'default',
+                        template: isEth ? 'eth' : isDai ? 'dai' : isOkb ? 'okb' : 'default',
                         warningText: t('additional_post_box__steganography_post_failed'),
                     })
                 } else {

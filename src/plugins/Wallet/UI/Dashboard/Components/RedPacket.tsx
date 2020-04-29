@@ -5,6 +5,7 @@ import { RedPacketRecord, RedPacketJSONPayload, RedPacketStatus, ERC20TokenRecor
 import Services from '../../../../../extension/service'
 import { PluginMessageCenter } from '../../../../PluginMessages'
 import { formatBalance } from '../../../formatter'
+import { DAI_ADDRESS, OKB_ADDRESS } from '../../../erc20'
 
 const useStyles = makeStyles(theme =>
     createStyles({
@@ -62,6 +63,7 @@ const useStyles = makeStyles(theme =>
             width: '6em',
             height: '6em',
         },
+        okb: {},
         text: {
             padding: theme.spacing(0.5, 2),
             height: '100%',
@@ -180,7 +182,11 @@ export function RedPacketWithStateUI(props: {
             </div>
             <div
                 className={classNames(classes.packet, {
-                    [classes.dai]: info.name === 'DAI' || info.address === '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+                    [classes.dai]: info.name === 'DAI' || info.address === DAI_ADDRESS,
+                })}></div>
+            <div
+                className={classNames(classes.packet, {
+                    [classes.okb]: info.name === 'OKB' || info.address === OKB_ADDRESS,
                 })}></div>
             <div
                 className={classNames(classes.loader, {
